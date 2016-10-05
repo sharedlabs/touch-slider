@@ -1,0 +1,187 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+
+<!--
+`touch-slider`
+
+
+@demo demo/index.html 
+-->
+
+<dom-module id="touch-slider">
+  <template>
+    <style>
+      
+      :host {
+        display: block;
+        overflow: hidden;
+        position: relative;
+        -moz-user-select: -moz-none;
+        -khtml-user-select: none;
+        -webkit-user-select: none;
+        -o-user-select: none;
+        user-select: none;
+      }
+
+      #items {
+        @apply(--layout-horizontal);
+        @apply(--layout-center-center);
+        width: 300%;
+        overflow: hidden;
+
+        position: absolute;
+        left: -100%;
+        top: 0;
+        bottom: 0;
+      }
+
+      .item {
+        @apply(--layout-flex);
+        height: 100%;
+        pointer-events: none;
+        will-change: transform;
+        font-size: 100px;
+      }
+
+    </style>
+
+    <div id="items" on-track="_onTrack">
+    </div>
+
+  </template>
+</dom-module>
+
+<script>
+(function() {
+  'use strict';
+
+  Polymer({
+
+    is: 'touch-slider',
+
+    properties: {
+
+      currentIndex: {
+        type: Number,
+        value: 0,
+        observer: '_currentIndexChanged'
+      },
+
+      // TODO: max and min
+      max: Number
+
+    },
+
+    _currentIndexChanged(currentIndex) {
+      const currentIndexes = [];
+      for (let i = currentIndex - 1; i <= currentIndex + 1; i++) {
+        currentIndexes.push(i);
+      }
+
+      const items = Array.from(this.$.items.children);
+      const itemsLength = items.length;
+      const unchangedIndexes = [];
+
+      // Remove unnecessary items
+      for (let i = 0; i < itemsLength; i++) {
+        const item = items[i];
+        const itemIndex = Number(item.dataset.index);
+        if (currentIndexes.indexOf(itemIndex) < 0) {
+          item.remove();
+        } else {
+          unchangedIndexes.push(itemIndex);
+        }
+      }
+
+      // Add items
+      for (let i = 0; i < 3; i++) {
+        const index = currentIndexes[i];
+
+        if (unchangedIndexes.indexOf(index) < 0) {
+          this._createItem(currentIndexes[i], i);
+        }
+      }
+    },
+
+    _createItem(index, position) {
+      const item = this.create('div');
+
+      item.classList.add('item');
+      item.setAttribute('data-index', index);
+      this.fire('new-item', {item, index});
+
+      const itemInThatPosition = this.$.items.children[position];
+
+      if (position < 2 && itemInThatPosition) {
+        Polymer.dom(this.$.items).insertBefore(item, itemInThatPosition);
+      } else {
+        Polymer.dom(this.$.items).appendChild(item);
+      }
+    },
+
+    _onTrack(event) {
+      switch (event.detail.state) {
+        case 'start': this._trackStart(event); break;
+        case 'track': this._track(event); break;
+        case 'end': this._trackEnd(event); break;
+      }      
+    },
+
+    _trackStart(event) {
+      event.preventDefault();
+
+      if (this._animation) {
+        this._animation.finish();
+      }
+
+      this._rect = this.getBoundingClientRect();
+      this._startTime = new Date().getTime();
+    },
+
+    _track(event) {
+      const dx = event.detail.dx;
+
+      if (Math.abs(dx) < this._rect.width) {
+        this.$.items.style.transform = `translateX(${dx}px)`;
+      }
+    },
+
+    _trackEnd(event) {
+      const currentTime = new Date().getTime();
+      const timePassed = currentTime - this._startTime;
+      const dx = event.detail.dx;
+      const steps = Math.abs(dx);
+      const minSteps = this._rect.width / 8;
+      const maxSteps = this._rect.width / 3;
+
+      let addToIndex = 0;
+
+      if ((Math.abs(timePassed / dx) <= 1 && steps >= minSteps) || steps >= maxSteps) {
+       addToIndex = dx > 0 ? -1 : 1;
+      }
+
+      let translateX = addToIndex === 0 ? 0 : addToIndex === 1 ? -this._rect.width : this._rect.width ;
+
+      requestAnimationFrame(() => {
+        this._animation = this.$.items.animate([
+          {transform: this.$.items.style.transform || 'translateX(0px)'},
+          {transform: `translateX(${translateX}px)`}
+        ], {
+          duration: 500,
+          easing: 'cubic-bezier(0.075, 0.82, 0.165, 1)'
+        });
+
+        this._animation.onfinish = () => {
+          requestAnimationFrame(() => {
+            this.currentIndex = this.currentIndex + addToIndex;
+            this.$.items.style.transform = '';
+            this._animation = null;
+          });
+        };
+      });
+    }
+
+  });
+
+}());
+</script>

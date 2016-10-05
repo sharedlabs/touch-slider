@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+  <head>
+    <title>touch-slider demo</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
+    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+
+    <link rel="import" href="../touch-slider.html">
+
+    <style is="custom-style">
+      html,
+      body,
+      touch-slider {
+        height: 100%;
+        width: 100%;
+      }
+
+      body {
+        margin: 0;
+      }
+
+    </style>
+  </head>
+  <body>
+
+    <template is="dom-bind" id="app">
+      <touch-slider on-new-item="_onNewItem" max="11"></touch-slider>
+    </template>
+
+    <script>
+
+      const images = [
+        "https://cdn2.iconfinder.com/data/icons/cutecritters/t9dog2_trans.png",
+        "https://cdn2.iconfinder.com/data/icons/cutecritters/t9tuqui_trans.png",
+        "https://cdn2.iconfinder.com/data/icons/cutecritters/t9panda_trans.png",
+        "https://cdn2.iconfinder.com/data/icons/cutecritters/t9elephant_trans.png",
+        "https://cdn2.iconfinder.com/data/icons/cutecritters/t9lion_trans.png",
+        "https://cdn2.iconfinder.com/data/icons/cutecritters/t9foxy_trans.png",
+        "https://cdn2.iconfinder.com/data/icons/cutecritters/t9kitty_trans.png",
+        "https://cdn2.iconfinder.com/data/icons/cutecritters/t9ratty_trans.png",
+        "https://cdn2.iconfinder.com/data/icons/cutecritters/t9froggy_trans.png",
+        "https://cdn2.iconfinder.com/data/icons/cutecritters/t9ducky_trans.png",
+        "https://cdn2.iconfinder.com/data/icons/cutecritters/t9batty_trans.png",
+        "https://cdn2.iconfinder.com/data/icons/cutecritters/t9penguino_trans.png"   
+      ];
+
+      window.onload = () => {
+        const app = document.querySelector('#app');
+
+        app._onNewItem = (event) => {
+          const img = document.createElement('img');
+          img.setAttribute('src', images[event.detail.index]);
+          img.style.width = '100%';
+          img.style.height = 'auto';
+          event.detail.item.appendChild(img);
+        };
+      };
+
+    </script>
+
+  </body>
+</html>
