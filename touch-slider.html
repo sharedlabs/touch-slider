@@ -83,6 +83,10 @@
     },
 
     goToIndex(index) {
+      if (this._animation) {
+        return;
+      }
+
       let translateX = null;
       this._rect = this.getBoundingClientRect();
 
