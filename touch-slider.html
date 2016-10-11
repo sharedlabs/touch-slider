@@ -84,6 +84,7 @@
 
     goToIndex(index) {
       let translateX = null;
+      this._rect = this.getBoundingClientRect();
 
       if (index === this.currentIndex - 1) {
         translateX = this._rect.width;
