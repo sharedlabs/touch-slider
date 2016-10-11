@@ -70,7 +70,6 @@
         observer: '_visibleCurrentIndexChanged'
       },
 
-      // TODO: max and min
       max: Number
 
     },
@@ -92,6 +91,16 @@
         return;
       }
 
+      if (typeof this.max === 'number' && currentIndex + 1 > this.max) {
+        this.currentIndex = currentIndex - 1;
+        return;
+      }
+
+      if (currentIndex < 0) {
+        this.currentIndex = 0;
+        return;
+      }
+
       if (this._animation) {
         this._animation.finish();
       }
@@ -100,16 +109,12 @@
 
       let translateX = null;
 
-      switch (currentIndex) {
-        case (old - 1):
-          translateX = this._rect.width;
-          break;
-        case (old + 1):
-          translateX = -this._rect.width;
-          break;
-        case old:
-          translateX = 0;
-          break;
+      if (currentIndex === old-1 && old !== this.max) {
+        translateX = this._rect.width;
+      } else if (currentIndex === old + 1 && old !== -1) {
+        translateX = -this._rect.width;
+      } else if (currentIndex === old || old === this.max || old === -1) {
+        translateX = 0;
       }
 
       if (translateX === null) {
@@ -200,7 +205,7 @@
     },
 
     _track(event) {
-      const dx = event.detail.dx;
+      let dx = event.detail.dx;
 
       if (Math.abs(dx) < this._rect.width) {
         this.$.items.style.transform = `translateX(${dx}px)`;
