@@ -44,8 +44,7 @@
 
     </style>
 
-    <div id="items" on-track="_onTrack">
-    </div>
+    <div id="items" on-track="_onTrack"></div>
 
   </template>
 </dom-module>
@@ -73,6 +72,38 @@
 
     attached() {
       this._currentIndexChanged(this.currentIndex);
+    },
+
+    goToIndex(index) {
+      let translateX = null;
+
+      if (index === this.currentIndex - 1) {
+        translateX = this._rect.width;
+      } else if (index === this.currentIndex + 1) {
+        translateX = -this._rect.width;
+      } else if (index === this.currentIndex) {
+        translateX = 0;
+      }
+
+      if (translateX === null) {
+        this.currentIndex = index;
+      } else {
+        requestAnimationFrame(() => {
+          this._animation = this.$.items.animate([
+            {transform: this.$.items.style.transform || 'translateX(0px)'},
+            {transform: `translateX(${translateX}px)`}
+          ], {
+            duration: 500,
+            easing: 'cubic-bezier(0.075, 0.82, 0.165, 1)'
+          });
+
+          this._animation.onfinish = () => {
+            this.currentIndex = index;
+            this.$.items.style.transform = '';
+            this._animation = null;
+          };
+        });
+      }
     },
 
     _currentIndexChanged(currentIndex) {
@@ -161,31 +192,13 @@
       const minSteps = this._rect.width / 8;
       const maxSteps = this._rect.width / 3;
 
-      let addToIndex = 0;
+      let newIndex = this.currentIndex;
 
       if ((Math.abs(timePassed / dx) <= 1 && steps >= minSteps) || steps >= maxSteps) {
-       addToIndex = dx > 0 ? -1 : 1;
+       newIndex = dx > 0 ? newIndex - 1 : newIndex + 1;
       }
 
-      let translateX = addToIndex === 0 ? 0 : addToIndex === 1 ? -this._rect.width : this._rect.width ;
-
-      requestAnimationFrame(() => {
-        this._animation = this.$.items.animate([
-          {transform: this.$.items.style.transform || 'translateX(0px)'},
-          {transform: `translateX(${translateX}px)`}
-        ], {
-          duration: 500,
-          easing: 'cubic-bezier(0.075, 0.82, 0.165, 1)'
-        });
-
-        this._animation.onfinish = () => {
-          requestAnimationFrame(() => {
-            this.currentIndex = this.currentIndex + addToIndex;
-            this.$.items.style.transform = '';
-            this._animation = null;
-          });
-        };
-      });
+      this.goToIndex(newIndex);
     }
 
   });
