@@ -74,6 +74,14 @@
       this._currentIndexChanged(this.currentIndex);
     },
 
+    goToNext() {
+      this.goToIndex(this.currentIndex + 1);
+    },
+
+    goToPrevious() {
+      this.goToIndex(this.currentIndex - 1);
+    },
+
     goToIndex(index) {
       let translateX = null;
 
