@@ -163,20 +163,32 @@
     },
 
     _currentIndexChanged(currentIndex, old) {
-      return;
-      if (typeof this.max === 'number' && currentIndex + 1 > this.max) {
-        this.currentIndex = currentIndex - 1;
+      if (!this.isAttached) {
         return;
       }
-
-      if (currentIndex < 0) {
-        this.currentIndex = 0;
+      
+      // Index should be between 0 and the max value
+      this.currentIndex = Math.min(Math.max(0, currentIndex), this.max);
+      if (this.currentIndex !== currentIndex) {
         return;
       }
 
       let translateX = null;
 
       this._updateRect();
+
+      var indexes = Array.from(this.$.items.children).map(el => {
+        return Number(el.getAttribute(index));
+      });
+
+      console.log(indexes);
+
+      // We need to know the direction we will transalte to, there are three states
+      // left/center/right.
+      // We need to know 
+      const toTheRight = currentIndex === old - 1;
+      const toTheLeft = currentIndex === old + 1;
+      const toTheCenter = currentIndex === old || old === this.max
 
       if (currentIndex === old - 1 && old !== this.max) {
         translateX = this._rect.width;
