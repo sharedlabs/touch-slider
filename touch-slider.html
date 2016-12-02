@@ -26,25 +26,24 @@
       #items {
         @apply(--layout-horizontal);
         @apply(--layout-center-center);
-        width: 300%;
-        overflow: hidden;
-
-        position: absolute;
-        left: -100%;
-        top: 0;
         bottom: 0;
+        left: -100%;
+        overflow: hidden;
+        position: absolute;
+        top: 0;
+        width: 300%;
+        will-change: transform;
       }
 
       .item {
         @apply(--layout-flex);
         height: 100%;
         pointer-events: none;
-        will-change: transform;
       }
 
     </style>
 
-    <div id="items" on-track="_onTrack"></div>
+    <div id="items"></div>
 
   </template>
 </dom-module>
@@ -59,6 +58,7 @@
 
     properties: {
 
+      // current item index
       currentIndex: {
         type: Number,
         value: 0,
@@ -66,32 +66,108 @@
         observer: '_currentIndexChanged'
       },
 
-      _visibleCurrentIndex: {
+      // max number of items
+      max: {
         type: Number,
-        observer: '_visibleCurrentIndexChanged'
+        value: Infinity
       },
 
-      max: Number
+      // whether the user is dragging an item
+      dragging: {
+        type: Boolean,
+        value: false,
+        readOnly: true,
+        reflectToAttribute: true
+      },
 
+      disabled: {
+        type: Boolean,
+        value: false,
+        notify: true,
+        reflectToAttribute: true
+      },
+
+      // The current index in its dom order
+      _domCurrentIndex: {
+        type: Number,
+        observer: '_domCurrentIndexChanged'
+      }
+
+    },
+
+    listeners: {
+      'pointerdown': '_onPointerDown',
+      'touchmove': '_onTouchMove',
+      'touchend': '_onTouchEnd'
     },
 
     attached() {
       this._currentIndexChanged(this.currentIndex);
     },
 
-    goToNext() {
-      this.currentIndex += 1;
-    },
-
-    goToPrevious() {
-      this.currentIndex -= 1;
-    },
-
-    _currentIndexChanged(currentIndex, old) {
-      if (!this.isAttached) {
-        return;
+    _onPointerDown(event) {
+      if (event.pointerType === 'touch') {
+        this._startX = event.clientX;
       }
+    },
 
+    _onTouchMove(event) {
+      if (typeof this._startX === 'number' && !this.disabled) {
+        const dx = event.touches[0].clientX - this._startX;
+        this._lastDx = dx;
+
+        if (this.dragging) {
+          if (Math.abs(dx) < this._rect.width) {
+            this.$.items.style.transform = `translateX(${dx}px`;      
+          }
+        } else {
+          // Don't start dragging until the finger has moved a bit
+          if (Math.abs(dx) > 8) {
+            this._updateRect();
+            this._startDraggingTime = new Date().getTime();
+            this._setDragging(true);
+          }
+        }
+      }
+    },
+
+    _onTouchEnd(event) {
+      if (this.dragging) {
+        event.stopPropagation();
+
+        // Set a new index if 
+        const dx = this._lastDx;
+        const currentTime = new Date().getTime();
+        const timePassed = currentTime - this._startDraggingTime;
+        const steps = Math.abs(dx);
+        const minSteps = this._rect.width / 8;
+        const maxSteps = this._rect.width / 3;
+
+        let newIndex = this.currentIndex;
+
+        if ((Math.abs(timePassed / dx) <= 1 && steps >= minSteps) || steps >= maxSteps) {
+          newIndex = dx > 0 ? newIndex - 1 : newIndex + 1;
+        }
+
+        console.log(newIndex);
+        
+        if (newIndex === this.currentIndex) {
+          this._currentIndexChanged(newIndex, newIndex);
+        } else {
+          this.currentIndex = newIndex;  
+        }
+
+        this._lastDx = null;
+        this._setDragging(false);
+      }
+  
+      this._startX = null;
+    },
+
+    /**
+     * When the currentIndex changes, we have to move the slider to that item.
+     */
+    _currentIndexChanged(currentIndex, old) {
       if (typeof this.max === 'number' && currentIndex + 1 > this.max) {
         this.currentIndex = currentIndex - 1;
         return;
@@ -102,13 +178,9 @@
         return;
       }
 
-      if (this._animation) {
-        this._animation.finish();
-      }
-
-      this._rect = this.getBoundingClientRect();
-
       let translateX = null;
+
+      this._updateRect();
 
       if (currentIndex === old-1 && old !== this.max) {
         translateX = this._rect.width;
@@ -120,28 +192,28 @@
 
       if (translateX === null) {
         this._visibleCurrentIndex = currentIndex;
-      } else {
-        requestAnimationFrame(() => {
-          this._animation = this.$.items.animate([
-            {transform: this.$.items.style.transform || 'translateX(0px)'},
-            {transform: `translateX(${translateX}px)`}
-          ], {
-            duration: 500,
-            easing: 'cubic-bezier(0.075, 0.82, 0.165, 1)'
-          });
-
-          this._animation.onfinish = () => {
-            this._visibleCurrentIndex = currentIndex;
-            this.$.items.style.transform = '';
-            this._animation = null;
-          };
-        });
+        return;
       }
+
+      requestAnimationFrame(_ => {
+        const animation = this.$.items.animate([
+          {transform: this.$.items.style.transform || 'translate3d(0, 0 ,0)'},
+          {transform: `translate3d(${translateX}px, 0, 0)`}
+        ], {
+          duration: 500,
+          easing: 'cubic-bezier(0.075, 0.82, 0.165, 1)'          
+        });
+
+        animation.onfinish = _ => {
+          this._domCurrentIndex = currentIndex;
+          this.$.items.style.transform = '';
+        };
+      });
     },
 
-    _visibleCurrentIndexChanged(visibleCurrentIndex) {
+    _domCurrentIndexChanged(domCurrentIndex) {
       const currentIndexes = [];
-      for (let i = visibleCurrentIndex - 1; i <= visibleCurrentIndex + 1; i++) {
+      for (let i = domCurrentIndex - 1; i <= domCurrentIndex + 1; i++) {
         currentIndexes.push(i);
       }
 
@@ -174,7 +246,7 @@
       const item = this.create('div');
 
       item.classList.add('item');
-      item.setAttribute('data-index', index);
+      item.setAttribute('index', index);
       this.fire('new-item', {item, index});
 
       const itemInThatPosition = this.$.items.children[position];
@@ -186,52 +258,8 @@
       }
     },
 
-    _onTrack(event) {
-      switch (event.detail.state) {
-        case 'start': this._trackStart(event); break;
-        case 'track': this._track(event); break;
-        case 'end': this._trackEnd(event); break;
-      }      
-    },
-
-    _trackStart(event) {
-      event.preventDefault();
-
-      if (this._animation) {
-        this._animation.finish();
-      }
-
+    _updateRect() {
       this._rect = this.getBoundingClientRect();
-      this._startTime = new Date().getTime();
-    },
-
-    _track(event) {
-      let dx = event.detail.dx;
-
-      if (Math.abs(dx) < this._rect.width) {
-        this.$.items.style.transform = `translateX(${dx}px)`;
-      }
-    },
-
-    _trackEnd(event) {
-      const currentTime = new Date().getTime();
-      const timePassed = currentTime - this._startTime;
-      const dx = event.detail.dx;
-      const steps = Math.abs(dx);
-      const minSteps = this._rect.width / 8;
-      const maxSteps = this._rect.width / 3;
-
-      let newIndex = this.currentIndex;
-
-      if ((Math.abs(timePassed / dx) <= 1 && steps >= minSteps) || steps >= maxSteps) {
-       newIndex = dx > 0 ? newIndex - 1 : newIndex + 1;
-      }
-
-      if (newIndex === this.currentIndex) {
-        this._currentIndexChanged(newIndex, newIndex);
-      } else {
-        this.currentIndex = newIndex;  
-      }
     }
 
   });
