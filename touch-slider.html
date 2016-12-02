@@ -149,8 +149,6 @@
           newIndex = dx > 0 ? newIndex - 1 : newIndex + 1;
         }
 
-        console.log(newIndex);
-        
         if (newIndex === this.currentIndex) {
           this._currentIndexChanged(newIndex, newIndex);
         } else {
@@ -164,10 +162,8 @@
       this._startX = null;
     },
 
-    /**
-     * When the currentIndex changes, we have to move the slider to that item.
-     */
     _currentIndexChanged(currentIndex, old) {
+      return;
       if (typeof this.max === 'number' && currentIndex + 1 > this.max) {
         this.currentIndex = currentIndex - 1;
         return;
@@ -182,7 +178,7 @@
 
       this._updateRect();
 
-      if (currentIndex === old-1 && old !== this.max) {
+      if (currentIndex === old - 1 && old !== this.max) {
         translateX = this._rect.width;
       } else if (currentIndex === old + 1 && old !== -1) {
         translateX = -this._rect.width;
