@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/sharedlabs/touch-slider.svg?branch=master)](https://travis-ci.org/sharedlabs/touch-slider)
+
 _[Demo and API docs](https://sharedlabs.github.io/touch-slider/components/touch-slider/)_
 
 # touch-slider
