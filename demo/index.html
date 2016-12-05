@@ -19,12 +19,37 @@
         height: 100vh;
         width: 100%;
       }
+
+      .arrow {
+        background: white;
+        border-radius: 50%;
+        bottom: 0;
+        height: 24px;
+        margin: auto;
+        padding: 8px;
+        position: absolute;
+        top: 0;
+        width: 24px;
+        z-index: 1;
+      }
+
+      .arrow svg {
+        height: 24px;
+        width: 24px;
+      }
+
     </style>
   </head>
   <body>
 
     <template is="dom-bind" id="app">
-      <touch-slider on-new-item="_onNewItem" max="8"></touch-slider>
+      <svg class="arrow" style="left: 20px;" on-click="_prevSlide" viewBox="0 0 24 24">
+        <path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z" />
+      </svg>
+      <touch-slider on-new-slide="_onNewSlide" current-index="{{currentIndex}}" max="8"></touch-slider>
+      <svg class="arrow" style="right: 20px;" on-click="_nextSlide" viewBox="0 0 24 24">
+        <path d="M4,11V13H16L10.5,18.5L11.92,19.92L19.84,12L11.92,4.08L10.5,5.5L16,11H4Z" />
+      </svg>
     </template>
 
     <script>
@@ -40,17 +65,25 @@
         "images/8.jpg"
       ];
 
-      window.onload = () => {
+      window.onload = _ => {
         const app = document.querySelector('#app');
 
-        app._onNewItem = (event) => {
+        app._prevSlide = _ => {
+          app.currentIndex -= 1;
+        };
+
+        app._nextSlide = _ => {
+          app.currentIndex += 1;
+        };
+
+        app._onNewSlide = (event) => {
           const index = event.detail.index;
           if (index <= images.length - 1) {
             const img = document.createElement('img');
             img.setAttribute('src', images[index]);
             img.style.width = '100%';
             img.style.height = 'auto';
-            event.detail.item.appendChild(img);
+            event.detail.slide.appendChild(img);
           }
         };
       };

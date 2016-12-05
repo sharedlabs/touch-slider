@@ -2,8 +2,28 @@
 <link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
 
 <!--
-`touch-slider`
+`touch-slider` is a super simple draggable slider for touch devices.
 
+The drag doesn't work with mouse events. IMO for desktop  it's better to have some arrow handles instead.
+
+A slide is a container where you can attach content. There is always three slides attached at the same time, so animations can occur.
+
+When a new slide is rendered the `new-slide` event is fired.  
+
+Use the max attribute to set the max length of items. 
+
+Example:
+
+    <touch-slider on-new-slide="_onNewSlide" max="[[images.length]]"></touch-slider>
+    ...
+    _onNewSlide(event) {
+      const slide = event.detail.slide;
+      const slideIndex = event.detail.index;
+      const img = document.createElement('img');
+
+      img.setAttribute('src', this.images[slideIndex]);
+      Polymer.dom(slide).appendChild(img);
+    }
 
 @demo demo/index.html 
 -->
@@ -23,7 +43,7 @@
         user-select: none;
       }
 
-      #items {
+      #slides {
         @apply(--layout-horizontal);
         @apply(--layout-wrap);
         bottom: 0;
@@ -35,26 +55,26 @@
         will-change: transform;
       }
 
-      .item {
+      .slide {
         @apply(--layout-center-center);
         @apply(--layout-flex);
         @apply(--layout);
-        position: relative;
-        pointer-events: none;
         height: 100%;
+        pointer-events: none;
+        position: relative;
       }
 
-      .item:first-child {
+      .slide:first-child {
         margin-right: 20px;
       }
 
-      .item:last-child {
+      .slide:last-child {
         margin-left: 20px;
       }
 
     </style>
 
-    <div id="items"></div>
+    <div id="slides"></div>
 
   </template>
 </dom-module>
@@ -69,7 +89,9 @@
 
     properties: {
 
-      // current item index
+      /**
+       * Current visible slide index.
+       */
       currentIndex: {
         type: Number,
         value: 0,
@@ -77,13 +99,17 @@
         observer: '_currentIndexChanged'
       },
 
-      // max number of items
+      /**
+       * Max length of slides.
+       */
       max: {
         type: Number,
         value: Infinity
       },
 
-      // whether the user is dragging an item
+      /**
+       * True if the user is dragging a slide. 
+       */
       dragging: {
         type: Boolean,
         value: false,
@@ -91,14 +117,22 @@
         reflectToAttribute: true
       },
 
-      disabled: {
+      /**
+       * When true the slider is not draggable.
+       */
+      dragDisabled: {
         type: Boolean,
         value: false,
         notify: true,
         reflectToAttribute: true
       },
 
-      // The current index in its dom order
+      /**
+       * When a drag ends and a new currentIndex is set, the container is transformed
+       * to the new position with a smooth animation. When the animation finishes this value
+       * is set to match the currentIndex and it's then when the dom elements are reattached
+       * to match the current set of indexes.
+       */
       _domCurrentIndex: {
         type: Number,
         observer: '_domCurrentIndexChanged'
@@ -123,12 +157,15 @@
     _onTouchMove(event) {
       if (typeof this._startX === 'number' && !this.disabled) {
         const dx = event.touches[0].clientX - this._startX;
-        this._lastDx = dx;
 
         if (this.dragging) {
-          if (Math.abs(dx) < this._rect.width) {
-            this.$.items.style.transform = `translateX(${dx}px`;      
+          if (Math.abs(dx) <= this._rect.width) {
+            requestAnimationFrame(_ => {
+              this.$.slides.style.transform = `translate3d(${dx}px, 0, 0)`;
+            });
           }
+
+          this._dx = dx;
         } else {
           // Don't start dragging until the finger has moved a bit
           if (Math.abs(dx) > 4) {
@@ -144,27 +181,30 @@
       if (this.dragging) {
         event.stopPropagation();
 
-          const currentTime = new Date().getTime();
-          this._draggingDuration = currentTime - this._startDraggingTime;
-          let newIndex = this.currentIndex;
+        const currentTime = new Date().getTime();
+        this._draggingDuration = currentTime - this._startDraggingTime;
+        let newIndex = this.currentIndex;
 
-          if (this._draggingDuration / Math.abs(this._lastDx) < 1.2) {
-            newIndex = this._lastDx > 0 ? this.currentIndex - 1 : this.currentIndex + 1;
-          }
+        if (this._draggingDuration / Math.abs(this._dx) < 1.2) {
+          newIndex = this._dx > 0 ? this.currentIndex - 1 : this.currentIndex + 1;
+        }
 
-          if (newIndex === this.currentIndex) {
-            this._currentIndexChanged(newIndex, newIndex);
-          } else {
-            this.currentIndex = newIndex;  
-          }
+        if (newIndex === this.currentIndex) {
+          this._currentIndexChanged(newIndex, newIndex);
+        } else {
+          this.currentIndex = newIndex;  
+        }
 
         this._startX = null;
-        this._lastDx = null;
+        this._dx = null;
         this._startDraggingTime = null;
         this._setDragging(false);
       }
    },
 
+   /**
+    * Animate the current slide to the new currentIndex.
+    */
     _currentIndexChanged(currentIndex, old) {
       if (!this.isAttached) {
         return;
@@ -176,10 +216,8 @@
         return;
       }
 
-      if (this._animation) this._animation.finish();
-
+      // Which direction the slides are moving to.
       let direction;
-
       if (currentIndex > old && old !== -1) {
         direction = 'right';
       } else if (currentIndex < old && old !== this.max) {
@@ -188,11 +226,14 @@
         direction = 'center';
       }
 
-      const dragging = this.dragging;
-      let transformFrom, transformTo, duration, easing;
+      if (this._animation) {
+        this._animation.finish();
+      }
 
-      if (dragging) {
+      if (this.dragging) {
         this._updateRect();
+
+        const isFastDrag = this._draggingDuration < 70;
         let translateX = 0;
 
         if (direction === 'left') {
@@ -201,15 +242,22 @@
           translateX = -this._rect.width -20;
         }
 
-        transformFrom = this.$.items.style.transform;
-        transformTo = `translate3d(${translateX}px, 0, 0)`;
-        console.log(this._draggingDuration)
+        this._animation = this.$.slides.animate([
+          {transform: this.$.slides.style.transform},
+          {transform: `translate3d(${translateX}px, 0, 0)`}
+        ], {
+          duration: isFastDrag < 70 ? 150 : 400,
+          easing: isFastDrag < 70 ? 'cubic-bezier(0.39, 0.575, 0.565, 1)': 'cubic-bezier(0.215, 0.61, 0.355, 1)'
+        });
 
-        duration = this._draggingDuration < 70 ? 150 : 400;
-        easing = this._draggingDuration < 70 ? 'cubic-bezier(0.39, 0.575, 0.565, 1)': null;
+        this._animation.onfinish = _ => {
+          this._domCurrentIndex = currentIndex;
+          this.$.slides.style.transform = '';
+          this._animation = null;
+        };
       } else {
+        // Animation when the currentIndex is changed manually.
         this._domCurrentIndex = currentIndex;
-
         let translateX = 0;
 
         if (direction === 'right') {
@@ -218,75 +266,73 @@
           translateX = '-20'
         }
 
-        transformFrom =  `translate3d(${translateX}px, 0, 0)`;
-        transformTo =  'translate3d(0, 0, 0)';
-        duration = 300;
-      }
-
-      requestAnimationFrame(_ => {
-        this._animation = this.$.items.animate([
-          {transform: transformFrom},
-          {transform: transformTo}
+        this._animation = this.$.slides.animate([
+          {transform: `translate3d(${translateX}px, 0, 0)`},
+          {transform: 'translate3d(0, 0, 0)'}
         ], {
-          duration,
-          easing: easing || 'cubic-bezier(0.215, 0.61, 0.355, 1)'
+          easing: 'cubic-bezier(0.215, 0.61, 0.355, 1)',
+          duration: 300
         });
 
         this._animation.onfinish = _ => {
-          if (dragging) {
-            this._domCurrentIndex = currentIndex;
-            this.$.items.style.transform = '';
-          }
-
           this._animation = null;
         };
-      });
+      }
     },
-
+    
+    /**
+     * Reattach the slides to match the current index set.
+     *
+     * @param {!Number} domCurrentIndex
+     */
     _domCurrentIndexChanged(domCurrentIndex) {
       const currentIndexes = [];
       for (let i = domCurrentIndex - 1; i <= domCurrentIndex + 1; i++) {
         currentIndexes.push(i);
       }
 
-      const items = this.$.items.children;
+      const slides = this.$.slides.children;
       const unchangedIndexes = [];
 
-      // Remove unnecessary items
-      for (let i = items.length - 1; i >= 0; i--) {
-        const item = items[i];
-        const itemIndex = Number(item.dataset.index);
+      // Remove unnecessary slides
+      for (let i = slides.length - 1; i >= 0; i--) {
+        const slide = slides[i];
+        const slideIndex = Number(slide.dataset.index);
 
-        if (currentIndexes.indexOf(itemIndex) < 0) {
-          item.remove();
+        if (currentIndexes.indexOf(slideIndex) < 0) {
+          slide.remove();
         } else {
-          unchangedIndexes.push(itemIndex);
+          unchangedIndexes.push(slideIndex);
         }
       }
 
-      // Add items
+      // Add slides
       for (let i = 0; i < 3; i++) {
         const index = currentIndexes[i];
 
         if (unchangedIndexes.indexOf(index) < 0) {
-          this._createItem(currentIndexes[i], i);
+          this._renderSlide(currentIndexes[i], i);
         }
       }
     },
 
-    _createItem(index, position) {
-      const item = this.create('div');
+    /**
+     * @param {!Number} index - The index of the slide.
+     * @param {!Number} slideIndex - Represents the slide child index. It can be 0, 1 or 2. 
+     */
+    _renderSlide(index, slideIndex) {
+      const slide = this.create('div');
 
-      item.classList.add('item');
-      item.setAttribute('data-index', index);
-      this.fire('new-item', {item, index});
+      slide.classList.add('slide');
+      slide.setAttribute('data-index', index);
+      this.fire('new-slide', {slide, index});
 
-      const itemInThatPosition = this.$.items.children[position];
+      const slideInThatPosition = this.$.slides.children[slideIndex];
 
-      if (position < 2 && itemInThatPosition) {
-        Polymer.dom(this.$.items).insertBefore(item, itemInThatPosition);
+      if (slideIndex < 2 && slideInThatPosition) {
+        Polymer.dom(this.$.slides).insertBefore(slide, slideInThatPosition);
       } else {
-        Polymer.dom(this.$.items).appendChild(item);
+        Polymer.dom(this.$.slides).appendChild(slide);
       }
     },
 
