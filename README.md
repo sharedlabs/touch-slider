@@ -1,4 +1,5 @@
-[![Build Status](https://travis-ci.org/sharedlabs/touch-slider.svg?branch=master)](https://travis-ci.org/sharedlabs/touch-slider)
+[![Build Status](https://img.shields.io/travis/sharedlabs/touch-slider.svg?style=flat-square)](https://travis-ci.org/sharedlabs/touch-slider)
+[![License](https://img.shields.io/apm/l/touch-slider.svg?style=flat-square)](https://github.com/b3by/atom-clock/blob/master/LICENSE.md)
 
 _[Demo and API docs](https://sharedlabs.github.io/touch-slider/components/touch-slider/)_
 
