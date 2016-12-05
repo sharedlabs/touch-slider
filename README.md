@@ -1,5 +1,6 @@
 [![Build Status](https://img.shields.io/travis/sharedlabs/touch-slider.svg?style=flat-square)](https://travis-ci.org/sharedlabs/touch-slider)
 [![License](https://img.shields.io/github/license/sharedlabs/touch-slider.svg?style=flat-square)](https://github.com/sharedlabs/touch-slider/blob/master/LICENSE.md)
+[![Published on webcomponents.org](https://img.shields.io/badge/webcomponents.org-published-blue.svg)](https://beta.webcomponents.org/element/sharedlabs/touch-slider)
 
 _[Demo and API docs](https://sharedlabs.github.io/touch-slider/components/touch-slider/)_
 
