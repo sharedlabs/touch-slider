@@ -10,7 +10,7 @@ A slide is a container where you can attach content. There is always three slide
 
 When a new slide is rendered the `new-slide` event is fired.  
 
-Use the max attribute to set the max length of items. 
+Use the max attribute to set the max length of slides. 
 
 ```html
 <touch-slider on-new-slide="_onNewSlide" max="[[images.length]]"></touch-slider>
