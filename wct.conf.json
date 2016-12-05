@@ -1,0 +1,29 @@
+{
+  "verbose": true,
+  "plugins": {
+    "sauce": {
+      "browsers": [{
+          "browserName": "microsoftedge",
+          "platform": "Windows 10",
+          "version": "latest-2"
+        }, {
+          "browserName": "chrome",
+          "platform": "Windows 10",
+          "version": "latest-2"
+        }, {
+          "browserName": "chrome",
+          "platform": "Android 4.4",
+          "version": "latest-2"
+        }, {
+          "browserName": "safari",
+          "platform": "OS X 10.11",
+          "version": "11"
+        }, {
+          "browserName": "firefox",
+          "platform": "OS X 10.11",
+          "version": "Windows 10"
+        }
+      ]
+    }
+  }
+}
