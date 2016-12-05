@@ -5,7 +5,7 @@
       "browsers": [{
           "browserName": "MicrosoftEdge",
           "platform": "Windows 10",
-          "version": "latest-2"
+          "version": "latest"
         }, {
           "browserName": "firefox",
           "platform": "Windows 10",
