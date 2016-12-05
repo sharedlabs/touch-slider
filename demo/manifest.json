@@ -1,0 +1,15 @@
+{
+  "name": "touch-slider",
+  "short_name": "touch-slider",
+  "start_url": "/components/touch-slider/demo/",
+  "display": "standalone",
+  "theme_color": "#37434a",
+  "background_color": "#37434a",
+  "icons": [
+    {
+      "src": "images/1.jpg",
+      "sizes": "512x520",
+      "type": "image/png"
+    }
+  ]
+}

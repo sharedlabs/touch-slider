@@ -25,20 +25,31 @@
 
       #items {
         @apply(--layout-horizontal);
-        @apply(--layout-center-center);
+        @apply(--layout-wrap);
         bottom: 0;
-        left: -100%;
+        left: calc(-100% - 20px);
         overflow: hidden;
         position: absolute;
         top: 0;
-        width: 300%;
+        width: calc(300% + 40px);
         will-change: transform;
       }
 
       .item {
+        @apply(--layout-center-center);
         @apply(--layout-flex);
-        height: 100%;
+        @apply(--layout);
+        position: relative;
         pointer-events: none;
+        height: 100%;
+      }
+
+      .item:first-child {
+        margin-right: 20px;
+      }
+
+      .item:last-child {
+        margin-left: 20px;
       }
 
     </style>
@@ -96,7 +107,7 @@
     },
 
     listeners: {
-      'pointerdown': '_onPointerDown',
+      'touchstart': '_onTouchStart',
       'touchmove': '_onTouchMove',
       'touchend': '_onTouchEnd'
     },
@@ -105,10 +116,8 @@
       this._currentIndexChanged(this.currentIndex);
     },
 
-    _onPointerDown(event) {
-      if (event.pointerType === 'touch') {
-        this._startX = event.clientX;
-      }
+    _onTouchStart(event) {
+      this._startX = event.touches[0].clientX;
     },
 
     _onTouchMove(event) {
@@ -122,7 +131,7 @@
           }
         } else {
           // Don't start dragging until the finger has moved a bit
-          if (Math.abs(dx) > 8) {
+          if (Math.abs(dx) > 4) {
             this._updateRect();
             this._startDraggingTime = new Date().getTime();
             this._setDragging(true);
@@ -135,86 +144,101 @@
       if (this.dragging) {
         event.stopPropagation();
 
-        // Set a new index if 
-        const dx = this._lastDx;
-        const currentTime = new Date().getTime();
-        const timePassed = currentTime - this._startDraggingTime;
-        const steps = Math.abs(dx);
-        const minSteps = this._rect.width / 8;
-        const maxSteps = this._rect.width / 3;
+          const currentTime = new Date().getTime();
+          this._draggingDuration = currentTime - this._startDraggingTime;
+          let newIndex = this.currentIndex;
 
-        let newIndex = this.currentIndex;
+          if (this._draggingDuration / Math.abs(this._lastDx) < 1.2) {
+            newIndex = this._lastDx > 0 ? this.currentIndex - 1 : this.currentIndex + 1;
+          }
 
-        if ((Math.abs(timePassed / dx) <= 1 && steps >= minSteps) || steps >= maxSteps) {
-          newIndex = dx > 0 ? newIndex - 1 : newIndex + 1;
-        }
+          if (newIndex === this.currentIndex) {
+            this._currentIndexChanged(newIndex, newIndex);
+          } else {
+            this.currentIndex = newIndex;  
+          }
 
-        if (newIndex === this.currentIndex) {
-          this._currentIndexChanged(newIndex, newIndex);
-        } else {
-          this.currentIndex = newIndex;  
-        }
-
+        this._startX = null;
         this._lastDx = null;
+        this._startDraggingTime = null;
         this._setDragging(false);
       }
-  
-      this._startX = null;
-    },
+   },
 
     _currentIndexChanged(currentIndex, old) {
       if (!this.isAttached) {
         return;
       }
-      
+
       // Index should be between 0 and the max value
-      this.currentIndex = Math.min(Math.max(0, currentIndex), this.max);
+      this.currentIndex = Math.min(Math.max(0, currentIndex), this.max - 1);
       if (this.currentIndex !== currentIndex) {
         return;
       }
 
-      let translateX = null;
+      if (this._animation) this._animation.finish();
 
-      this._updateRect();
+      let direction;
 
-      var indexes = Array.from(this.$.items.children).map(el => {
-        return Number(el.getAttribute(index));
-      });
-
-      console.log(indexes);
-
-      // We need to know the direction we will transalte to, there are three states
-      // left/center/right.
-      // We need to know 
-      const toTheRight = currentIndex === old - 1;
-      const toTheLeft = currentIndex === old + 1;
-      const toTheCenter = currentIndex === old || old === this.max
-
-      if (currentIndex === old - 1 && old !== this.max) {
-        translateX = this._rect.width;
-      } else if (currentIndex === old + 1 && old !== -1) {
-        translateX = -this._rect.width;
-      } else if (currentIndex === old || old === this.max || old === -1) {
-        translateX = 0;
+      if (currentIndex > old && old !== -1) {
+        direction = 'right';
+      } else if (currentIndex < old && old !== this.max) {
+        direction = 'left';
+      } else {
+        direction = 'center';
       }
 
-      if (translateX === null) {
-        this._visibleCurrentIndex = currentIndex;
-        return;
+      const dragging = this.dragging;
+      let transformFrom, transformTo, duration, easing;
+
+      if (dragging) {
+        this._updateRect();
+        let translateX = 0;
+
+        if (direction === 'left') {
+          translateX = this._rect.width + 20;
+        } else if (direction === 'right') {
+          translateX = -this._rect.width -20;
+        }
+
+        transformFrom = this.$.items.style.transform;
+        transformTo = `translate3d(${translateX}px, 0, 0)`;
+        console.log(this._draggingDuration)
+
+        duration = this._draggingDuration < 70 ? 150 : 400;
+        easing = this._draggingDuration < 70 ? 'cubic-bezier(0.39, 0.575, 0.565, 1)': null;
+      } else {
+        this._domCurrentIndex = currentIndex;
+
+        let translateX = 0;
+
+        if (direction === 'right') {
+          translateX = '20';
+        } else if (direction === 'left') {
+          translateX = '-20'
+        }
+
+        transformFrom =  `translate3d(${translateX}px, 0, 0)`;
+        transformTo =  'translate3d(0, 0, 0)';
+        duration = 300;
       }
 
       requestAnimationFrame(_ => {
-        const animation = this.$.items.animate([
-          {transform: this.$.items.style.transform || 'translate3d(0, 0 ,0)'},
-          {transform: `translate3d(${translateX}px, 0, 0)`}
+        this._animation = this.$.items.animate([
+          {transform: transformFrom},
+          {transform: transformTo}
         ], {
-          duration: 500,
-          easing: 'cubic-bezier(0.075, 0.82, 0.165, 1)'          
+          duration,
+          easing: easing || 'cubic-bezier(0.215, 0.61, 0.355, 1)'
         });
 
-        animation.onfinish = _ => {
-          this._domCurrentIndex = currentIndex;
-          this.$.items.style.transform = '';
+        this._animation.onfinish = _ => {
+          if (dragging) {
+            this._domCurrentIndex = currentIndex;
+            this.$.items.style.transform = '';
+          }
+
+          this._animation = null;
         };
       });
     },
@@ -225,14 +249,14 @@
         currentIndexes.push(i);
       }
 
-      const items = Array.from(this.$.items.children);
-      const itemsLength = items.length;
+      const items = this.$.items.children;
       const unchangedIndexes = [];
 
       // Remove unnecessary items
-      for (let i = 0; i < itemsLength; i++) {
+      for (let i = items.length - 1; i >= 0; i--) {
         const item = items[i];
         const itemIndex = Number(item.dataset.index);
+
         if (currentIndexes.indexOf(itemIndex) < 0) {
           item.remove();
         } else {
@@ -254,7 +278,7 @@
       const item = this.create('div');
 
       item.classList.add('item');
-      item.setAttribute('index', index);
+      item.setAttribute('data-index', index);
       this.fire('new-item', {item, index});
 
       const itemInThatPosition = this.$.items.children[position];
