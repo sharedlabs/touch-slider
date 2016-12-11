@@ -325,7 +325,10 @@ Example:
 
       slide.classList.add('slide');
       slide.setAttribute('data-index', index);
-      this.fire('new-slide', {slide, index});
+
+      if (index >= 0) {
+        this.fire('new-slide', {slide, index});
+      }
 
       const slideInThatPosition = this.$.slides.children[slideIndex];
 
