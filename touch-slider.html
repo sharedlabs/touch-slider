@@ -211,7 +211,7 @@ Example:
       }
 
       // Index should be between 0 and the max value
-      this.currentIndex = Math.min(Math.max(0, currentIndex), this.max - 1);
+      this.currentIndex = Math.min(Math.max(0, currentIndex), Math.max(0, this.max - 1));
       if (this.currentIndex !== currentIndex) {
         return;
       }
