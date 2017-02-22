@@ -66,21 +66,21 @@
         "images/8.jpg"
       ];
 
-      window.onload = _ => {
-        const app = document.querySelector('#app');
+      window.onload = function() {
+        var app = document.querySelector('#app');
 
-        app._prevSlide = _ => {
+        app._prevSlide = function() {
           app.currentIndex -= 1;
         };
 
-        app._nextSlide = _ => {
+        app._nextSlide = function() {
           app.currentIndex += 1;
         };
 
-        app._onNewSlide = (event) => {
-          const index = event.detail.index;
+        app._onNewSlide = function(event) {
+          var index = event.detail.index;
           if (index <= images.length - 1) {
-            const img = document.createElement('img');
+            var img = document.createElement('img');
             img.setAttribute('src', images[index]);
             img.style.width = '100%';
             img.style.height = 'auto';

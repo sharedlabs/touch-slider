@@ -17,9 +17,9 @@ Example:
     <touch-slider on-new-slide="_onNewSlide" max="[[images.length]]"></touch-slider>
     ...
     _onNewSlide(event) {
-      const slide = event.detail.slide;
-      const slideIndex = event.detail.index;
-      const img = document.createElement('img');
+      var slide = event.detail.slide;
+      var slideIndex = event.detail.index;
+      var img = document.createElement('img');
 
       img.setAttribute('src', this.images[slideIndex]);
       Polymer.dom(slide).appendChild(img);
@@ -146,23 +146,23 @@ Example:
       'touchend': '_onTouchEnd'
     },
 
-    attached() {
+    attached: function() {
       this._currentIndexChanged(this.currentIndex);
     },
 
-    _onTouchStart(event) {
+    _onTouchStart: function(event) {
       this._startX = event.touches[0].clientX;
     },
 
-    _onTouchMove(event) {
+    _onTouchMove: function(event) {
       if (typeof this._startX === 'number' && !this.disabled) {
-        const dx = event.touches[0].clientX - this._startX;
+        var dx = event.touches[0].clientX - this._startX;
 
         if (this.dragging) {
           if (Math.abs(dx) <= this._rect.width) {
-            requestAnimationFrame(_ => {
+            requestAnimationFrame(function() {
               this.$.slides.style.transform = `translate3d(${dx}px, 0, 0)`;
-            });
+            }.bind(this));
           }
 
           this._dx = dx;
@@ -177,13 +177,13 @@ Example:
       }
     },
 
-    _onTouchEnd(event) {
+    _onTouchEnd: function(event) {
       if (this.dragging) {
         event.stopPropagation();
 
-        const currentTime = new Date().getTime();
+        var currentTime = new Date().getTime();
         this._draggingDuration = currentTime - this._startDraggingTime;
-        let newIndex = this.currentIndex;
+        var newIndex = this.currentIndex;
 
         if (this._draggingDuration / Math.abs(this._dx) < 1.2) {
           newIndex = this._dx > 0 ? this.currentIndex - 1 : this.currentIndex + 1;
@@ -205,7 +205,7 @@ Example:
    /**
     * Animate the current slide to the new currentIndex.
     */
-    _currentIndexChanged(currentIndex, old) {
+    _currentIndexChanged: function(currentIndex, old) {
       if (!this.isAttached) {
         return;
       }
@@ -217,7 +217,7 @@ Example:
       }
 
       // Which direction the slides are moving to.
-      let direction;
+      var direction;
       if (currentIndex > old && old !== -1) {
         direction = 'right';
       } else if (currentIndex < old && old !== this.max) {
@@ -230,11 +230,12 @@ Example:
         this._animation.finish();
       }
 
+      // Only animate on touch
       if (this.dragging) {
         this._updateRect();
 
-        const isFastDrag = this._draggingDuration < 70;
-        let translateX = 0;
+        var isFastDrag = this._draggingDuration < 70;
+        var translateX = 0;
 
         if (direction === 'left') {
           translateX = this._rect.width + 20;
@@ -250,33 +251,14 @@ Example:
           easing: isFastDrag < 70 ? 'cubic-bezier(0.39, 0.575, 0.565, 1)': 'cubic-bezier(0.215, 0.61, 0.355, 1)'
         });
 
-        this._animation.onfinish = _ => {
+        this._animation.onfinish = function() {
           this._domCurrentIndex = currentIndex;
           this.$.slides.style.transform = '';
           this._animation = null;
-        };
+        }.bind(this);
       } else {
-        // Animation when the currentIndex is changed manually.
+        // Dont animate for if triggered by mouse events
         this._domCurrentIndex = currentIndex;
-        let translateX = 0;
-
-        if (direction === 'right') {
-          translateX = '20';
-        } else if (direction === 'left') {
-          translateX = '-20'
-        }
-
-        this._animation = this.$.slides.animate([
-          {transform: `translate3d(${translateX}px, 0, 0)`},
-          {transform: 'translate3d(0, 0, 0)'}
-        ], {
-          easing: 'cubic-bezier(0.215, 0.61, 0.355, 1)',
-          duration: 300
-        });
-
-        this._animation.onfinish = _ => {
-          this._animation = null;
-        };
       }
     },
     
@@ -285,19 +267,19 @@ Example:
      *
      * @param {!Number} domCurrentIndex
      */
-    _domCurrentIndexChanged(domCurrentIndex) {
-      const currentIndexes = [];
-      for (let i = domCurrentIndex - 1; i <= domCurrentIndex + 1; i++) {
+    _domCurrentIndexChanged: function(domCurrentIndex) {
+      var currentIndexes = [];
+      for (var i = domCurrentIndex - 1; i <= domCurrentIndex + 1; i++) {
         currentIndexes.push(i);
       }
 
-      const slides = this.$.slides.children;
-      const unchangedIndexes = [];
+      var slides = this.$.slides.children;
+      var unchangedIndexes = [];
 
       // Remove unnecessary slides
-      for (let i = slides.length - 1; i >= 0; i--) {
-        const slide = slides[i];
-        const slideIndex = Number(slide.dataset.index);
+      for (var i = slides.length - 1; i >= 0; i--) {
+        var slide = slides[i];
+        var slideIndex = Number(slide.dataset.index);
 
         if (currentIndexes.indexOf(slideIndex) < 0) {
           slide.remove();
@@ -307,8 +289,8 @@ Example:
       }
 
       // Add slides
-      for (let i = 0; i < 3; i++) {
-        const index = currentIndexes[i];
+      for (var i = 0; i < 3; i++) {
+        var index = currentIndexes[i];
 
         if (unchangedIndexes.indexOf(index) < 0) {
           this._renderSlide(currentIndexes[i], i);
@@ -320,8 +302,8 @@ Example:
      * @param {!Number} index - The index of the slide.
      * @param {!Number} slideIndex - Represents the slide child index. It can be 0, 1 or 2. 
      */
-    _renderSlide(index, slideIndex) {
-      const slide = this.create('div');
+    _renderSlide: function(index, slideIndex) {
+      var slide = this.create('div');
 
       slide.classList.add('slide');
       slide.setAttribute('data-index', index);
@@ -330,7 +312,7 @@ Example:
         this.fire('new-slide', {slide, index});
       }
 
-      const slideInThatPosition = this.$.slides.children[slideIndex];
+      var slideInThatPosition = this.$.slides.children[slideIndex];
 
       if (slideIndex < 2 && slideInThatPosition) {
         Polymer.dom(this.$.slides).insertBefore(slide, slideInThatPosition);
@@ -339,7 +321,7 @@ Example:
       }
     },
 
-    _updateRect() {
+    _updateRect: function() {
       this._rect = this.getBoundingClientRect();
     }
 
