@@ -13,13 +13,13 @@ Example:
 
     <touch-slider items="[[images]]"></touch-slider>
 
-@demo demo/index.html 
+@demo demo/index.html
 -->
 
 <dom-module id="touch-slider">
   <template>
     <style>
-      
+
       :host {
         display: block;
         overflow: hidden;
@@ -94,7 +94,7 @@ Example:
       },
 
       /**
-       * True if the user is dragging a slide. 
+       * True if the user is dragging a slide.
        */
       dragging: {
         type: Boolean,
@@ -137,7 +137,7 @@ Example:
     },
 
     _itemsChanged: function() {
-      this.$.slides.innerHTML = ''; 
+      this.$.slides.innerHTML = '';
       this.currentIndex = 0;
       this._domCurrentIndexChanged(this.currentIndex);
     },
@@ -184,7 +184,7 @@ Example:
         if (newIndex === this.currentIndex) {
           this._currentIndexChanged(newIndex, newIndex);
         } else {
-          this.currentIndex = newIndex;  
+          this.currentIndex = newIndex;
         }
 
         this._startX = null;
@@ -198,7 +198,7 @@ Example:
     * Animate the current slide to the new currentIndex.
     */
     _currentIndexChanged: function(currentIndex, old) {
-      if (!this.isAttached) {
+      if (!this.isAttached || !this.items || !this.items.length) {
         return;
       }
 
@@ -254,7 +254,7 @@ Example:
         this._domCurrentIndex = currentIndex;
       }
     },
-    
+
     /**
      * Reattach the slides to match the current index set.
      *
@@ -293,7 +293,7 @@ Example:
 
     /**
      * @param {!Number} index - The index of the slide.
-     * @param {!Number} slideIndex - Represents the slide child index. It can be 0, 1 or 2. 
+     * @param {!Number} slideIndex - Represents the slide child index. It can be 0, 1 or 2.
      */
     _renderSlide: function(index, slideIndex) {
       var slide = this.create('div');
@@ -301,7 +301,7 @@ Example:
       slide.classList.add('slide');
       slide.setAttribute('data-index', index);
 
-      if (index >= 0) {
+      if (index >= 0 && this.items &&  this.items[index]) {
         var ironImage = this.create('iron-image', {
           src: this.items[index],
           sizing: 'cover'
