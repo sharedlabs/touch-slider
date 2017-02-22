@@ -20,9 +20,9 @@ Use the max attribute to set the max length of slides.
 <touch-slider on-new-slide="_onNewSlide" max="[[images.length]]"></touch-slider>
 ...
 _onNewSlide(event) {
-  const slide = event.detail.slide;
-  const slideIndex = event.detail.index;
-  const img = document.createElement('img');
+  var slide = event.detail.slide;
+  var slideIndex = event.detail.index;
+  var img = document.createElement('img');
 
   img.setAttribute('src', this.images[slideIndex]);
   Polymer.dom(slide).appendChild(img);
