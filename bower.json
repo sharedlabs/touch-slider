@@ -3,7 +3,8 @@
   "main": "touch-slider.html",
   "dependencies": {
     "polymer": "Polymer/polymer#^1.4.0",
-    "web-animations-js": "^2.2.2"
+    "web-animations-js": "^2.2.2",
+    "iron-image": "PolymerElements/iron-image#^1.2.5"
   },
   "devDependencies": {
     "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",

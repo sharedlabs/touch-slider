@@ -1,5 +1,6 @@
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-image/iron-image.html">
 
 <!--
 `touch-slider` is a super simple draggable slider for touch devices.
@@ -8,22 +9,9 @@ The drag doesn't work with mouse events. IMO for desktop it's better to have som
 
 A slide is a container where you can attach content. There is always three slides attached at the same time, so animations can occur.
 
-When a new slide is rendered the `new-slide` event is fired.  
-
-Use the max attribute to set the max length of slides. 
-
 Example:
 
-    <touch-slider on-new-slide="_onNewSlide" max="[[images.length]]"></touch-slider>
-    ...
-    _onNewSlide(event) {
-      var slide = event.detail.slide;
-      var slideIndex = event.detail.index;
-      var img = document.createElement('img');
-
-      img.setAttribute('src', this.images[slideIndex]);
-      Polymer.dom(slide).appendChild(img);
-    }
+    <touch-slider items="[[images]]"></touch-slider>
 
 @demo demo/index.html 
 -->
@@ -74,7 +62,8 @@ Example:
 
     </style>
 
-    <div id="slides"></div>
+    <div id="slides">
+    </div>
 
   </template>
 </dom-module>
@@ -89,6 +78,11 @@ Example:
 
     properties: {
 
+      items: {
+        type: Array,
+        observer: '_itemsChanged'
+      },
+
       /**
        * Current visible slide index.
        */
@@ -97,14 +91,6 @@ Example:
         value: 0,
         notify: true,
         observer: '_currentIndexChanged'
-      },
-
-      /**
-       * Max length of slides.
-       */
-      max: {
-        type: Number,
-        value: Infinity
       },
 
       /**
@@ -148,6 +134,12 @@ Example:
 
     attached: function() {
       this._currentIndexChanged(this.currentIndex);
+    },
+
+    _itemsChanged: function() {
+      this.$.slides.innerHTML = ''; 
+      this.currentIndex = 0;
+      this._domCurrentIndexChanged(this.currentIndex);
     },
 
     _onTouchStart: function(event) {
@@ -211,7 +203,8 @@ Example:
       }
 
       // Index should be between 0 and the max value
-      this.currentIndex = Math.min(Math.max(0, currentIndex), Math.max(0, this.max - 1));
+      this.currentIndex = Math.min(Math.max(0, currentIndex), Math.max(0, this.items.length - 1));
+
       if (this.currentIndex !== currentIndex) {
         return;
       }
@@ -220,7 +213,7 @@ Example:
       var direction;
       if (currentIndex > old && old !== -1) {
         direction = 'right';
-      } else if (currentIndex < old && old !== this.max) {
+      } else if (currentIndex < old && old !== this.items.length) {
         direction = 'left';
       } else {
         direction = 'center';
@@ -309,7 +302,15 @@ Example:
       slide.setAttribute('data-index', index);
 
       if (index >= 0) {
-        this.fire('new-slide', {slide, index});
+        var ironImage = this.create('iron-image', {
+          src: this.items[index],
+          sizing: 'cover'
+        });
+
+        ironImage.style.height = '100%';
+        ironImage.style.width = '100%';
+
+        Polymer.dom(slide).appendChild(ironImage);
       }
 
       var slideInThatPosition = this.$.slides.children[slideIndex];
